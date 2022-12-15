@@ -132,6 +132,5 @@ dmypy.json
 db
 *.idea
 .vscode
-keys/
 pyvenv.cfg
 node_modules/
