@@ -41,7 +41,7 @@ def register():
     data = {'username': user.username, 'user_agent': request.user_agent.string,
             'ip_address': request.remote_addr}
 
-    token = jwt.encode(data, SECRET_KEY, algorithm='HS256').decode('')
+    token = jwt.encode(data, SECRET_KEY, algorithm='HS256').decode('utf-8')
 
     return jsonify({'token': token}), 200
 
@@ -63,10 +63,13 @@ def login():
     return 'Wrong password', 401
 
 
-@app.route('/api/users', methods=['GET'])
-def get_users():
-    users = User.query.all()
-    return {'users': [user.username for user in users]}
+@app.route('/api/stats', methods=['GET'])
+def get_user():
+    token = request.headers.get('Authorization')
+    data = jwt.decode(token, SECRET_KEY)
+
+    user = User.query.filter_by(username=data['username']).first()
+    return user.get_stats()
 
 
 @app.route('/api/tasks', methods=['GET'])
@@ -169,6 +172,13 @@ def update_goal():
             continue
 
         goal.done = bool(status)
+        task = Task.query.filter_by(id=goal.task_id).first()
+        user = User.query.filter_by(id=task.user_id).first()
+
+        if goal.done:
+            user.goals_reached += 1
+        else:
+            user.goals_reached -= 1
 
     db.session.commit()
 
